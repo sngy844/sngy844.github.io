@@ -165,8 +165,8 @@
             }
         }
         
-        
-        let pH=2, pW = 3;
+        let isSolved= false;
+        let pH=2, pW = 3;   
         addRect(pH,pW,[3,5,6, 2,1,4]);
         
         rects=[];
@@ -284,19 +284,18 @@
                         rects[bottomRightIdx] = temp;
                         
                         //Check win
-                        let isWin=true;
+                        isSolved=true;
                         for(r = 0; r< pH; r++){
                             for(c = 0; c < pW; c++){
                                 let rect = rects[r*pW+c];
                                 if(rect.label != r*pW+c +1) 
-                                    isWin=false;
+                                    isSolved=false;
                             }
                         }
-                        if(isWin) console.log("Win");
-
                         //animElapsedTime =0;
                     }//else animElapsedTime
                 }//isDone
+
             }
             
             ctx.clearRect(0,0,canvas.width, canvas.height);
@@ -316,6 +315,10 @@
                     
                 }
             }
+
+            if(isSolved){
+                    ctx.strokeText("Solved!",canvas.width/2,canvas.height/2);
+            }
             
             previousTimeStamp = timeStamp;
             window.requestAnimationFrame(step);
@@ -328,7 +331,7 @@
         window.addEventListener('keydown',this.check,false);
 
         function check(e) {
-            if(done){
+            if(done && !isSolved){
 
                 if(e.keyCode ==82 ){
                     done = false;
