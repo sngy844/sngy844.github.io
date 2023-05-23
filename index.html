@@ -1,0 +1,368 @@
+<Title>
+    Oni Puzzle
+</Title>
+<head></head>
+
+<body>
+    <p id="demo"></p>
+
+    <canvas id="canvas" width="800" height="600" style="border:1px solid"></canvas>
+
+    <script>
+        let elm = document.getElementById("demo");
+
+        // let puzzle = [3,5,6,
+        //               2,1,4]; 
+            
+        // function rotate(row,col,puzzle){
+        //     let topLeftIdx =    row * pW + col;           let topRightIdx =   row * pW + col+1; 
+        //     let bottomLeftIdx =(row+1) * pW + col;        let bottomRightIdx =(row+1) * pW + (col+1); 
+            
+        //     //Swap topleft with bottom right (diagonally \ ) 
+        //     let temp = puzzle[topLeftIdx];
+        //     puzzle[topLeftIdx] = puzzle[bottomRightIdx];
+        //     puzzle[bottomRightIdx] = temp;  
+            
+        //     //Swap top and bottom row. By:
+        //     //Swap top left and bottom left elements
+        //     temp = puzzle[topLeftIdx];
+        //     puzzle[topLeftIdx] = puzzle[bottomLeftIdx];
+        //     puzzle[bottomLeftIdx]=temp;
+        //     //And swap top right and bottom right elements
+        //     temp = puzzle[topRightIdx];
+        //     puzzle[topRightIdx] = puzzle[bottomRightIdx];
+        //     puzzle[bottomRightIdx] = temp;
+        // }
+        
+        // function printPuzzle(puzzle,w,h){
+        //     for(r=0 ; r<h;r++){
+        //         for(c=0; c<w;c++){
+        //             elm.innerHTML += (puzzle[r*w+c]+" ");
+        //         }
+        //         elm.innerHTML +="<br/>";
+        //     }
+        // }
+
+        // function checkWin(puzzle,w,h){
+        //     for(r=0 ; r<h;r++){
+        //         for(c=0; c<w;c++){
+        //             if(puzzle[r*w+c] != (r*w+c)+1 /*number label start with 1*/ ){
+        //                 return false;
+        //             }
+        //         }              
+        //     }
+        //     return true;
+        // }
+
+        // function rotatePrintCheck(row,col){
+        //     elm.innerHTML +="<br/>";
+        //     rotate(row,col,puzzle);
+        //     printPuzzle(puzzle,pW,pH);    
+            
+        //     return checkWin(puzzle,pW,pH)
+        // }
+        
+        // printPuzzle(puzzle,pW,pH);
+
+        // if(rotatePrintCheck(0,0)){
+        //     console.log("Win");
+        // };
+        // if(rotatePrintCheck(0,1)){
+        //     console.log("Win");
+        // };
+        // if(rotatePrintCheck(0,0)){
+        //     console.log("Win");
+        // };
+        
+        const LEFT = 1, DOWN=2, RIGHT=3, UP=4;
+        
+        function getNextMoveDir(currentDir){
+            switch(currentDir){
+                case RIGHT:
+                    return DOWN;
+                case DOWN:
+                    return LEFT;
+                case LEFT: 
+                    return  UP;
+                case UP:
+                    return RIGHT;
+            }
+        }
+
+        function init2x2Directions(selectRow,selectCol){
+            let i = 0;
+            let moveDirs=[RIGHT,DOWN,UP,LEFT];
+            for(r = selectRow ; r<= selectRow+1; r++){
+                for(c = selectCol ; c<=selectCol+1; c++){
+                    let rect = rects[r*pW+c];
+                    
+                    rect.initX =0;
+                    rect.initY =0;
+                    rect.distanceX =0;
+                    rect.distanceY =0;
+                    rect.dir = moveDirs[i];
+
+                    rects[r*pW+c] =  initTravelDistanceXY(rect);
+                    i++;
+                }
+            }   
+        }
+
+        function initTravelDistanceXY(rectObject){
+                if(rectObject.dir == RIGHT){
+                    rectObject.initX= rectObject.x;
+                    rectObject.distanceX = rectObject.x+100;
+                }
+                if(rectObject.dir == LEFT){
+                    rectObject.initX= rectObject.x;
+                    rectObject.distanceX = rectObject.x-100;
+                }
+                if(rectObject.dir == DOWN){
+                    rectObject.initY= rectObject.y;
+                    rectObject.distanceY = rectObject.y+100;
+                }
+                if(rectObject.dir == UP){
+                    rectObject.initY= rectObject.y;
+                    rectObject.distanceY = rectObject.y-100;
+                }
+
+                return rectObject;
+            }
+
+
+        function createRect(initX, initY, label){
+            return {
+                    x : initX,
+                    y : initY,
+                    size: 50,
+                    label: label,
+                    dir: null,
+                    initX : initX,
+                    initY : initY,
+                    distanceX : 0,
+                    distanceY : 0
+            };
+        }
+
+        var rects =  [
+                    //   createRect(0,0,3)    , createRect(100,0,5)   ,    createRect(200,000,6),
+                    //   createRect(0,100,2)  , createRect(100,100,1) ,    createRect(200,100,4)
+                    ]
+
+        function addRect(nRow,nCol,labels){
+            
+            let k =0,j=0;
+            for(r =0 ; r<nRow; r++){
+                k=0;
+                for(c = 0; c<nCol;c++){
+                    let idx = r*nCol + c;
+                    console.log(idx);
+                    rects.push( createRect(k*100,j*100 ,labels[idx]) )   
+                    k++;
+                }
+                j++;
+            }
+        }
+        
+        
+        let pH=2, pW = 3;
+        addRect(pH,pW,[3,5,6, 2,1,4]);
+        
+        rects=[];
+        pH=2,pW = 4; 
+        addRect(pH,pW,[ 6,5,8,7,
+                        2,1,4,3 ]);
+
+        rects=[];
+        pH=3,pW = 3; 
+        addRect(pH,pW,[ 1,3,8,
+                        2,5,9,
+                        6,4,7 ]);
+
+
+
+        let selectRow =0, selectCol=0;
+        //Only need to init sub 2x2 blocks at selected row and selected col
+        init2x2Directions(selectRow,selectCol);
+
+        const targetAnimTime = 250; //in ms
+        var animElapsedTime = 0.0;
+
+         var canvas=document.getElementById('canvas');
+         var ctx=canvas.getContext("2d");
+       
+        function lerp(start,end, t){
+            return (1 - t) * start + t * end;
+        }
+
+            
+        let start, previousTimeStamp;
+        let done = true;
+        
+        function step(timeStamp) {
+            
+            if (start === undefined) {
+                start = timeStamp;
+                previousTimeStamp = timeStamp;
+            }
+            const elapsed = timeStamp - start;
+           
+            //console.log(elapsed)
+            //console.log( );
+            if (previousTimeStamp !== timeStamp) {
+                const frameTime =timeStamp- previousTimeStamp;
+                
+                if(!done){
+                    if(animElapsedTime <= targetAnimTime)
+                    {
+
+                        let factor = (animElapsedTime)/targetAnimTime;
+                        
+                        if(animElapsedTime + frameTime >  targetAnimTime) factor =1.0; //next frame may over the elapse time so cap it in current frame
+
+                        for(r = selectRow ; r<= selectRow+1; r++){
+                            for(c = selectCol ; c<=selectCol+1; c++){
+                                let rect = rects[r*pW+c];
+                                //Linear interpolate position between init and target over time. Get target position in target animation time 
+                                if(rect.dir === RIGHT || rect.dir === LEFT)
+                                    rect.x = lerp(rect.initX,  rect.distanceX,factor)
+                                else
+                                    rect.y = lerp(rect.initY,rect.distanceY,factor)
+                                
+                                //rects[0].x = rects[0].x + (targetX - rects[0].x)*factor; // Get target position before target animation time and wait until target animation time elapsed https://medium.com/swlh/youre-using-lerp-wrong-73579052a3c3 , https://gamedevbeginner.com/the-right-way-to-lerp-in-unity-with-examples/#right_way_to_use_lerp
+                            } 
+                        }   
+                        animElapsedTime += frameTime;           
+                    }
+                    else 
+                    {
+                        for(r = selectRow ; r<= selectRow+1; r++){
+                            for(c = selectCol ; c<=selectCol+1; c++){
+                                let rect = rects[r*pW+c];
+                                let nextDir = getNextMoveDir(rect.dir)
+                                //console.log(rects[i].dir);
+                                if(nextDir === DOWN){
+                                    //initY = 0; targetY = 100;
+                                    rect.initY = rect.y;
+                                    rect.distanceY= rect.y + 100 ;
+                                }
+                                if(nextDir === LEFT){
+                                    rect.initX = rect.x;
+                                    rect.distanceX= rect.x - 100 ;
+                                }
+                                if(nextDir === UP){
+                                    rect.initY = rect.y;
+                                    rect.distanceY= rect.y - 100 ;
+                                }
+                                if(nextDir === RIGHT){
+                                    rect.initX = rect.x;
+                                    rect.distanceX= rect.x + 100 ;
+                                    //initY = 0; targetY = 0;
+                                }
+                                rect.dir = nextDir;
+                                //break;
+                            }
+                        } // End for
+                        done = true;
+                        
+                        //Done with graphic need to update the data
+                        let topLeftIdx =    selectRow * pW + selectCol;           let topRightIdx =   selectRow * pW + selectCol+1; 
+                        let bottomLeftIdx =(selectRow+1) * pW + selectCol;        let bottomRightIdx =(selectRow+1) * pW + (selectCol+1)
+                        let temp = rects[topLeftIdx];
+                        rects[topLeftIdx] = rects[bottomRightIdx];
+                        rects[bottomRightIdx] = temp;  
+                        
+                        //Swap top and bottom row. By:
+                        //Swap top left and bottom left elements
+                        temp = rects[topLeftIdx];
+                        rects[topLeftIdx] = rects[bottomLeftIdx];
+                        rects[bottomLeftIdx]=temp;
+                        //And swap top right and bottom right elements
+                        temp = rects[topRightIdx];
+                        rects[topRightIdx] = rects[bottomRightIdx];
+                        rects[bottomRightIdx] = temp;
+                        
+                        //Check win
+                        let isWin=true;
+                        for(r = 0; r< pH; r++){
+                            for(c = 0; c < pW; c++){
+                                let rect = rects[r*pW+c];
+                                if(rect.label != r*pW+c +1) 
+                                    isWin=false;
+                            }
+                        }
+                        if(isWin) console.log("Win");
+
+                        //animElapsedTime =0;
+                    }//else animElapsedTime
+                }//isDone
+            }
+            
+            ctx.clearRect(0,0,canvas.width, canvas.height);
+            for(r = 0; r< pH; r++){
+                for(c = 0; c < pW; c++){
+                    let rect = rects[r*pW+c];
+                    if(  (selectRow <= r && r <=selectRow + 1) && (selectCol <= c && c <=selectCol + 1)){
+                        ctx.fillStyle = "green";
+                        ctx.fillRect(rect.x,rect.y,rect.size,rect.size);
+                        ctx.strokeText(rect.label,rect.x+22,rect.y+27);
+                    }else{
+                        ctx.beginPath();
+                            ctx.rect(rect.x,rect.y,rect.size,rect.size);
+                        ctx.stroke();
+                        ctx.strokeText(rect.label,rect.x+22,rect.y+27);
+                    }
+                    
+                }
+            }
+            
+            previousTimeStamp = timeStamp;
+            window.requestAnimationFrame(step);
+        }
+
+
+        window.requestAnimationFrame(step);
+
+
+        window.addEventListener('keydown',this.check,false);
+
+        function check(e) {
+            if(done){
+
+                if(e.keyCode ==82 ){
+                    done = false;
+                    animElapsedTime =0;
+                }
+
+                let reinitDirect = false;
+                if(e.keyCode == 37){ //Left
+                    selectCol--;
+                    if(selectCol < 0) selectCol = 0;
+                    reinitDirect = true;
+                }
+                if(e.keyCode == 39){ //Right
+                    selectCol++;
+                    if(selectCol >= pW-2) selectCol = pW-2;
+                    reinitDirect = true;
+                }
+                if(e.keyCode == 38){ //Up
+                    selectRow--;
+                    if(selectRow < 0) selectRow = 0;
+                    reinitDirect = true;
+                }
+                if(e.keyCode == 40 ){ //Down
+                    selectRow++;
+                    if(selectRow >= pH-2) selectRow = pH-2;
+                    reinitDirect = true;
+                }
+
+                if(reinitDirect){
+                    init2x2Directions(selectRow,selectCol);
+                }
+            }
+        }
+
+    </script>
+
+</body>
+
